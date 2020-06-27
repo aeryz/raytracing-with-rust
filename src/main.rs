@@ -1,21 +1,29 @@
 extern crate image;
 
-use rust_tracer::vector::Vec3;
-use rust_tracer::ray::Ray;
-use rust_tracer::light::Light;
-use rust_tracer::sphere::Sphere;
-use std::f32;
 use image::png::PNGEncoder;
-use std::fs::File;
 use image::ColorType;
+use rust_tracer::camera::Camera;
+use rust_tracer::light::Light;
+use rust_tracer::ray::Ray;
+use rust_tracer::sphere::Sphere;
+use rust_tracer::vector::Vec3;
+use std::f32;
+use std::fs::File;
 
-fn write_image(filename: &str, pixels: &[u8], bounds: (usize, usize)) -> Result<(), std::io::Error>
-{
+fn write_image(
+    filename: &str,
+    pixels: &[u8],
+    bounds: (usize, usize),
+) -> Result<(), std::io::Error> {
     let output = File::create(filename)?;
 
     let encoder = PNGEncoder::new(output);
-    encoder.encode(&pixels, bounds.0 as u32, bounds.1 as u32,
-                   ColorType::Gray(8))?;
+    encoder.encode(
+        &pixels,
+        bounds.0 as u32,
+        bounds.1 as u32,
+        ColorType::Gray(8),
+    )?;
 
     Ok(())
 }
@@ -37,14 +45,17 @@ fn any_sphere_before_light(spheres: &Vec<Sphere>, ray: &Ray, ray_magnitude: f32)
         match sp.intersects(ray) {
             f if !f.is_sign_negative() && f < ray_magnitude => return true,
             _ => continue,
-
         }
-
     }
     false
 }
 
-fn get_color_at(spheres: &Vec<Sphere>, intersection_sphere: &Sphere, intersection_pos: &Vec3, light: &Light) -> u8 {
+fn get_color_at(
+    spheres: &Vec<Sphere>,
+    intersection_sphere: &Sphere,
+    intersection_pos: &Vec3,
+    light: &Light,
+) -> u8 {
     let normal = intersection_sphere.normal_at(intersection_pos);
     let ray_origin = intersection_pos + &normal.scalar_div(1000.0);
     let ray_direction = &light.pos - &ray_origin;
@@ -57,17 +68,16 @@ fn get_color_at(spheres: &Vec<Sphere>, intersection_sphere: &Sphere, intersectio
 
     match ray.direction.dot(&normal) {
         f if f.is_sign_positive() => (f * 255.0) as u8,
-        _ => 0
+        _ => 0,
     }
 }
 
 fn main() {
-    let cam_pos = Vec3::from(3.0, 1.5, -4.0);
-    let look_at = Vec3::new();
-
-    let cam_dir = (&look_at - &cam_pos).normalized();
-    let cam_right = Vec3::from(0.0, 1.0, 0.0).cross(&cam_dir).normalized();
-    let cam_up = cam_right.negative().cross(&cam_dir);
+    let camera = Camera::new(
+        Vec3::from(3.0, 1.5, -4.0),
+        Vec3::from(0.0, 1.0, 0.0),
+        Vec3::new(),
+    );
 
     let width = 800;
     let height = 600;
@@ -81,27 +91,24 @@ fn main() {
     let mut x_offset: f32;
     let mut y_offset: f32;
     let mut colors: Vec<u8> = Vec::new();
-    colors.resize(800 * 900, 0);
+    colors.resize(width * height, 0);
     let light = Light::from(Vec3::from(5.0, 5.0, 5.0));
 
-    for x in 0..width {
-        for y in 0..height {
+    for x in 0..width as i32 {
+        for y in 0..height as i32 {
             let width = width as f32;
             let height = height as f32;
             if width > height {
-                x_offset = (x as f32 + 0.5) / height - (width - height) / (height * 2.0);
-                y_offset = (y as f32 + 0.5) / height;
+                x_offset = ((x as f32) - width / 2.0) / height + 0.5;
+                y_offset = (y as f32) / height;
             } else if height > width {
-                x_offset = (x as f32 + 0.5) / width;
-                y_offset = (y as f32 + 0.5) / width - (height - width) / (width * 2.0);
+                x_offset = (x as f32) / width;
+                y_offset = ((y as f32) - width / 2.0) / width + 0.5;
             } else {
-                x_offset = (x as f32 + 0.5) / width;
-                y_offset = (y as f32 + 0.5) / height;
+                x_offset = (x as f32) / width;
+                y_offset = (y as f32) / height;
             }
-
-            let cam_ray = Ray::from(
-                cam_pos.clone(),
-                &cam_dir + &(&cam_right.scalar_mul(x_offset - 0.5) + &cam_up.scalar_mul(y_offset - 0.5)));
+            let cam_ray = camera.ray_with_offset(x_offset, y_offset);
 
             let mut intersections: Vec<f32> = Vec::new();
             for sp in &spheres {
@@ -111,9 +118,10 @@ fn main() {
             let color: u8 = match nearest_intersection_index(&intersections) {
                 None => 0,
                 Some(index) => {
-                    let intersection_pos = &cam_ray.origin + &cam_ray.direction.scalar_mul(intersections[index]);
+                    let intersection_pos =
+                        &cam_ray.origin + &cam_ray.direction.scalar_mul(intersections[index]);
                     get_color_at(&spheres, &spheres[index], &intersection_pos, &light)
-                },
+                }
             };
 
             colors[(y * width as i32 + x) as usize] = color;
@@ -122,5 +130,4 @@ fn main() {
 
     write_image("out.png", &colors, (width as usize, height as usize))
         .expect("Write to file error.");
-
 }
