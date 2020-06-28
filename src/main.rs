@@ -74,7 +74,7 @@ fn get_color_at(
 
 fn main() {
     let camera = Camera::new(
-        Vec3::from(3.0, 1.5, -4.0),
+        Vec3::from(3.0, 1.5, 4.0),
         Vec3::from(0.0, 1.0, 0.0),
         Vec3::new(),
     );
@@ -92,7 +92,7 @@ fn main() {
     let mut y_offset: f32;
     let mut colors: Vec<u8> = Vec::new();
     colors.resize(width * height, 0);
-    let light = Light::from(Vec3::from(5.0, 5.0, 5.0));
+    let light = Light::from(Vec3::from(5.0, 5.0, -5.0));
 
     for x in 0..width as i32 {
         for y in 0..height as i32 {

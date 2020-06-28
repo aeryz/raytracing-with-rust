@@ -45,7 +45,7 @@ impl Vec3 {
     pub fn cross(&self, rhs: &Vec3) -> Self {
         Vec3 {
             x: self.y * rhs.z - self.z * rhs.y,
-            y: self.x * rhs.z - self.z * rhs.x,
+            y: self.z * rhs.x - self.x * rhs.z,
             z: self.x * rhs.y - self.y * rhs.x,
         }
     }
@@ -115,5 +115,28 @@ impl ops::Sub for &Vec3 {
             y: self.y - rhs.y,
             z: self.z - rhs.z,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Vec3;
+
+    #[test]
+    pub fn test_cross() {
+        let vec1 = Vec3::from(3.16, -1.142, 22.11);
+        let vec2 = Vec3::from(-34.41, 22.3, 13.4);
+        let cross = vec1.cross(&vec2);
+        assert!(cross.x.eq(&-508.3558));
+        assert!(cross.y.eq(&-803.1491));
+        assert!(cross.z.eq(&31.171783));
+    }
+
+    #[test]
+    pub fn test_dot() {
+        let vec1 = Vec3::from(1.2, -3.4, 16.2);
+        let vec2 = Vec3::from(65.0, 0.0, -72.3);
+        let dot = vec1.dot(&vec2);
+        assert_eq!(dot, -1093.2601);
     }
 }
