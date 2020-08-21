@@ -57,10 +57,10 @@ fn get_color_at(
     light: &Light,
 ) -> u8 {
     let normal = intersection_sphere.normal_at(intersection_pos);
-    let ray_origin = intersection_pos + &normal.scalar_div(1000.0);
+    let ray_origin = intersection_pos + &(&normal / (1000.0));
     let ray_direction = &light.pos - &ray_origin;
     let ray_magnitude = ray_direction.magnitude();
-    let ray = Ray::from(ray_origin, ray_direction.clone());
+    let ray = Ray::new(ray_origin, ray_direction.clone());
 
     if any_sphere_before_light(spheres, &ray, ray_magnitude) {
         return 0;
@@ -74,25 +74,25 @@ fn get_color_at(
 
 fn main() {
     let camera = Camera::new(
-        Vec3::from(3.0, 1.5, 4.0),
-        Vec3::from(0.0, 1.0, 0.0),
-        Vec3::new(),
+        Vec3::new(3.0, 1.5, 4.0),
+        Vec3::new(0.0, 1.0, 0.0),
+        Vec3::default(),
     );
 
     let width = 800;
     let height = 600;
 
     let mut spheres: Vec<Sphere> = Vec::new();
-    spheres.push(Sphere::from(Vec3::from(1.25, -0.25, 0.0), 0.5));
-    spheres.push(Sphere::from(Vec3::from(0.0, 0.0, 0.0), 1.0));
-    spheres.push(Sphere::from(Vec3::from(0.0, -100.0, 0.0), 99.0));
-    spheres.push(Sphere::from(Vec3::from(0.0, 0.0, 0.0), 20.0));
+    spheres.push(Sphere::from(Vec3::new(1.25, -0.25, 0.0), 0.5));
+    spheres.push(Sphere::from(Vec3::new(0.0, 0.0, 0.0), 1.0));
+    spheres.push(Sphere::from(Vec3::new(0.0, -100.0, 0.0), 99.0));
+    spheres.push(Sphere::from(Vec3::new(0.0, 0.0, 0.0), 20.0));
 
     let mut x_offset: f32;
     let mut y_offset: f32;
     let mut colors: Vec<u8> = Vec::new();
     colors.resize(width * height, 0);
-    let light = Light::from(Vec3::from(5.0, 5.0, -5.0));
+    let light = Light::from(Vec3::new(5.0, 5.0, -5.0));
 
     for x in 0..width as i32 {
         for y in 0..height as i32 {
@@ -119,7 +119,7 @@ fn main() {
                 None => 0,
                 Some(index) => {
                     let intersection_pos =
-                        &cam_ray.origin + &cam_ray.direction.scalar_mul(intersections[index]);
+                        &cam_ray.origin + &(&cam_ray.direction * (intersections[index]));
                     get_color_at(&spheres, &spheres[index], &intersection_pos, &light)
                 }
             };
